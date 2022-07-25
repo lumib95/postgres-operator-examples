@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2022-07-25T08:14:19Z"
+  labels:
+    postgres-operator.crunchydata.com/cluster: app-db
+    postgres-operator.crunchydata.com/role: primary
+  name: app-db-primary
+  namespace: databases
+  ownerReferences:
+  - apiVersion: postgres-operator.crunchydata.com/v1beta1
+    blockOwnerDeletion: true
+    controller: true
+    kind: PostgresCluster
+    name: app-db
+    uid: 04b8be14-c5f6-4639-bf4d-92c05eb2bcf6
+  resourceVersion: "70240418"
+  uid: 6b6645ba-7454-424a-9caf-4274bc71df06
+spec:
+  # internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  - IPv6
+  ipFamilyPolicy: RequireDualStack
+  ports:
+  - name: postgres
+    port: 5432
+    protocol: TCP
+    targetPort: postgres
+  # sessionAffinity: None
+  type: NodePort
+status:
+  loadBalancer: {}

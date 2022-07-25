@@ -3,16 +3,30 @@ kind: PostgresCluster
 metadata:
   name: hippo
 spec:
+  users:
+    - name: hive
+      databases:
+       - "metastore_db"
+      options: "SUPERUSER"
   image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-14.3-0
   postgresVersion: 14
   instances:
     - name: instance1
+      replicas: 2
       dataVolumeClaimSpec:
         accessModes:
         - "ReadWriteOnce"
         resources:
           requests:
             storage: 1Gi
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchLabels:
+                postgres-operator.crunchydata.com/cluster: hippo
+                postgres-operator.crunchydata.com/instance-set: instance1
   backups:
     pgbackrest:
       image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.38-1
@@ -25,3 +39,24 @@ spec:
             resources:
               requests:
                 storage: 1Gi
+
+
+# <property>
+# <name>javax.jdo.option.ConnectionDriverName</name>
+# <value>org.postgresql.Driver</value>
+# </property>
+
+# <property>
+# <name>javax.jdo.option.ConnectionURL</name>
+# <value>jdbc:postgresql://metastore-db-primary.hive.svc:5432/metastore_db</value>
+# </property>
+
+# <property>
+# <name>javax.jdo.option.ConnectionUserName</name>
+# <value>hive</value>
+# </property>
+
+# <property>
+# <name>javax.jdo.option.ConnectionPassword</name>
+# <value>admin</value>
+# </property>

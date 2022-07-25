@@ -1,17 +1,33 @@
 apiVersion: postgres-operator.crunchydata.com/v1beta1
 kind: PostgresCluster
 metadata:
-  name: hippo-gcs
+  name: scheduler-service-db
 spec:
+  users:
+    - name: scheduler-service-user
+      databases:
+       - "scheduler_service_db"
+      options: "SUPERUSER"
   image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-14.3-0
   postgresVersion: 14
   instances:
-    - dataVolumeClaimSpec:
+    - name: set
+      replicas: 2
+      dataVolumeClaimSpec:
         accessModes:
         - "ReadWriteOnce"
         resources:
           requests:
-            storage: 1Gi
+            storage: 2Gi
+        storageClassName: premium-rwo
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchLabels:
+                postgres-operator.crunchydata.com/cluster: scheduler-service-db
+                postgres-operator.crunchydata.com/instance-set: set
   backups:
     pgbackrest:
       image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.38-1
@@ -19,8 +35,12 @@ spec:
       - secret:
           name: pgo-gcs-creds
       global:
-        repo1-path: /pgbackrest/postgres-operator/hippo-gcs/repo1
+        repo1-retention-full: "3"
+        repo1-retention-full-type: time
+        repo1-path: /scheduler-service/pgbackrest/postgres-operator/metastore-db/repo1
       repos:
       - name: repo1
+        schedules:
+          full: "0 1 * * *"
         gcs:
-          bucket: "<YOUR_GCS_BUCKET_NAME>"
+          bucket: "postgres-kode-backup"
